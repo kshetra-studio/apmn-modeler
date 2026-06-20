@@ -18,6 +18,14 @@ Unconnected EscapeGates should show a validation warning in the properties panel
 ### APMN formal spec adoption path (V3.0)
 Consider submitting APMN as a formal extension request to OMG BPMN working group for V3.0 adoption. The moddleExtension approach (apmn: namespace with typed subtypes of bpmn:*) is already structured for this. Track at: https://github.com/kshetra-studio/apmn
 
+### ⓘ popover links to exact spec anchor
+Currently the ⓘ info button on each sidebar node links to the top of the spec page (`docsUrl`).
+Should deep-link to the exact node section anchor, e.g.:
+- `agentTask` → `https://github.com/kshetra-studio/apmn/blob/main/spec/apmn-v0.1.md#agenttask`
+- `confidenceGate` → `...#confidencegate`
+- etc.
+Each `docsUrl` in `types.js` already has the correct anchor — the popover `<a>` tag just needs to use it directly. Also consider linking to the hosted `apmn.kshetra.studio` spec page once that domain is live.
+
 ## Implementation
 
 ### YAML duplicate ID validation
