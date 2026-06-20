@@ -1,0 +1,21 @@
+{
+  "name": "apmn-modeler",
+  "version": "0.1.0",
+  "description": "Visual drag-and-drop modeler for APMN — AI Process Model and Notation",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "bpmn-auto-layout": "^1.3.0",
+    "bpmn-js": "^17.11.1",
+    "diagram-js": "^14.10.0",
+    "js-yaml": "^4.1.0",
+    "tiny-svg": "^3.1.2"
+  },
+  "devDependencies": {
+    "vite": "^5.4.19"
+  }
+}

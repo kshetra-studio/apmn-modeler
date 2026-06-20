@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>APMN Modeler — Kshetra Studio</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>"/>
+</head>
+<body>
+
+<!-- Header -->
+<div id="header">
+  <div class="logo">APMN <span>Modeler</span></div>
+  <div class="badge">v0.1 · BETA</div>
+
+  <div class="spacer"></div>
+
+  <button class="toolbar-btn" id="btn-import" title="Import APMN YAML">
+    ↑ Import YAML
+  </button>
+  <button class="toolbar-btn primary" id="btn-export-yaml" title="Export as APMN YAML">
+    ↓ Export YAML
+  </button>
+  <button class="toolbar-btn" id="btn-export-bpmn" title="Export as BPMN 2.0 XML">
+    ↓ Export BPMN
+  </button>
+
+  <div style="width:1px;height:24px;background:#334155;margin:0 4px"></div>
+
+  <button class="toolbar-btn" id="btn-zoom-out" title="Zoom out">−</button>
+  <button class="toolbar-btn" id="btn-zoom-fit" title="Fit to screen">⊡</button>
+  <button class="toolbar-btn" id="btn-zoom-in" title="Zoom in">+</button>
+</div>
+
+<!-- Main -->
+<div id="app">
+  <!-- APMN Node Palette -->
+  <div id="apmn-sidebar"></div>
+
+  <div id="canvas-wrap">
+    <div id="canvas"></div>
+    <!-- APMN branding badge -->
+    <div id="apmn-badge">apmn.kshetra.studio</div>
+    <div id="apmn-badge-popup">
+      <div class="badge-popup-title">APMN Modeler</div>
+      <div class="badge-popup-body">A web-based visual tool for designing AI-native workflows using APMN — AI Process Model and Notation.</div>
+      <a class="badge-popup-link" href="https://apmn.kshetra.studio" target="_blank">Built on the open APMN standard · apmn.kshetra.studio ↗</a>
+    </div>
+  </div>
+
+  <!-- Properties panel -->
+  <div id="props-panel">
+    <div id="props-header">Properties</div>
+    <div id="props-content">
+      <p class="props-empty">Select a node or connection<br>to edit its properties.</p>
+    </div>
+  </div>
+</div>
+
+<!-- YAML Export Modal -->
+<div id="yaml-modal">
+  <div id="yaml-modal-inner">
+    <div id="yaml-modal-header">
+      <h3>APMN YAML Export</h3>
+      <button class="toolbar-btn" id="btn-copy-yaml">⧉ Copy</button>
+      <button class="toolbar-btn success" id="btn-download-yaml">↓ Download</button>
+      <button class="toolbar-btn" id="btn-close-yaml">✕</button>
+    </div>
+    <pre id="yaml-output"></pre>
+  </div>
+</div>
+
+<!-- YAML Import Modal -->
+<div id="import-modal">
+  <div id="import-modal-inner">
+    <div id="import-modal-header">
+      <h3>Import APMN YAML</h3>
+      <button class="toolbar-btn" id="btn-import-file">↑ Load file…</button>
+      <button class="toolbar-btn" id="btn-close-import">✕</button>
+    </div>
+    <textarea id="import-textarea" placeholder="Paste APMN YAML here, or use 'Load file…' above…"></textarea>
+    <div id="import-modal-footer">
+      <button class="toolbar-btn" id="btn-close-import-footer" onclick="document.getElementById('import-modal').classList.remove('open')">Cancel</button>
+      <button class="toolbar-btn primary" id="btn-import-confirm">Import →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
