@@ -5,39 +5,109 @@
   xmlns:apmn="http://apmn.kshetra.studio/ns/1.0"
   id="Definitions_apmn"
   targetNamespace="http://apmn.kshetra.studio/process">
-  <bpmn:process id="Process_1" isExecutable="false">
-    <bpmn:startEvent id="StartEvent_1" name="Start">
+
+  <bpmn:process id="Process_1" name="Sample AI Workflow" isExecutable="false">
+
+    <bpmn:startEvent id="Start_1" name="Start">
       <bpmn:outgoing>Flow_1</bpmn:outgoing>
     </bpmn:startEvent>
-    <bpmn:task id="Task_1" name="Agent Task" apmn:type="agentTask" apmn:model="gemini-2.0-flash">
+
+    <bpmn:task id="Agent_1" name="Process Request"
+        apmn:type="agentTask"
+        apmn:model="gemini-2.0-flash"
+        apmn:system_prompt="You are a helpful assistant.">
       <bpmn:incoming>Flow_1</bpmn:incoming>
       <bpmn:outgoing>Flow_2</bpmn:outgoing>
     </bpmn:task>
-    <bpmn:endEvent id="EndEvent_1" name="End">
+
+    <bpmn:exclusiveGateway id="Gate_1" name="Confidence?" apmn:type="confidenceGate">
       <bpmn:incoming>Flow_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+      <bpmn:outgoing>Flow_4</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:endEvent id="End_ok" name="Done">
+      <bpmn:incoming>Flow_3</bpmn:incoming>
     </bpmn:endEvent>
-    <bpmn:sequenceFlow id="Flow_1" sourceRef="StartEvent_1" targetRef="Task_1"/>
-    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_1" targetRef="EndEvent_1"/>
+
+    <bpmn:task id="Human_1" name="Human Review"
+        apmn:type="humanInLoopTask"
+        apmn:timeout="3600">
+      <bpmn:incoming>Flow_4</bpmn:incoming>
+      <bpmn:outgoing>Flow_5</bpmn:outgoing>
+    </bpmn:task>
+
+    <bpmn:endEvent id="End_reviewed" name="Reviewed">
+      <bpmn:incoming>Flow_5</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Agent_1"/>
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Agent_1" targetRef="Gate_1"/>
+    <bpmn:sequenceFlow id="Flow_3" name="high" sourceRef="Gate_1" targetRef="End_ok"/>
+    <bpmn:sequenceFlow id="Flow_4" name="low"  sourceRef="Gate_1" targetRef="Human_1"/>
+    <bpmn:sequenceFlow id="Flow_5" sourceRef="Human_1" targetRef="End_reviewed"/>
+
   </bpmn:process>
+
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1">
-      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
-        <dc:Bounds x="152" y="192" width="36" height="36"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="158" y="235" width="24" height="14"/></bpmndi:BPMNLabel>
+
+      <bpmndi:BPMNShape id="Start_1_di" bpmnElement="Start_1">
+        <dc:Bounds x="200" y="262" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="206" y="305" width="24" height="14"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_1_di" bpmnElement="Task_1">
-        <dc:Bounds x="240" y="170" width="120" height="80"/>
+
+      <bpmndi:BPMNShape id="Agent_1_di" bpmnElement="Agent_1">
+        <dc:Bounds x="296" y="240" width="120" height="80"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="EndEvent_1_di" bpmnElement="EndEvent_1">
-        <dc:Bounds x="412" y="192" width="36" height="36"/>
-        <bpmndi:BPMNLabel><dc:Bounds x="419" y="235" width="22" height="14"/></bpmndi:BPMNLabel>
+
+      <bpmndi:BPMNShape id="Gate_1_di" bpmnElement="Gate_1">
+        <dc:Bounds x="476" y="255" width="50" height="50"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="462" y="312" width="78" height="14"/></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="End_ok_di" bpmnElement="End_ok">
+        <dc:Bounds x="596" y="262" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="601" y="305" width="26" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Human_1_di" bpmnElement="Human_1">
+        <dc:Bounds x="596" y="420" width="120" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="End_reviewed_di" bpmnElement="End_reviewed">
+        <dc:Bounds x="776" y="442" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="763" y="485" width="62" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
       <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
-        <dc:Waypoint x="188" y="210"/><dc:Waypoint x="240" y="210"/>
+        <dc:Waypoint x="236" y="280"/>
+        <dc:Waypoint x="296" y="280"/>
       </bpmndi:BPMNEdge>
+
       <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
-        <dc:Waypoint x="360" y="210"/><dc:Waypoint x="412" y="210"/>
+        <dc:Waypoint x="416" y="280"/>
+        <dc:Waypoint x="476" y="280"/>
       </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3">
+        <dc:Waypoint x="526" y="280"/>
+        <dc:Waypoint x="596" y="280"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="544" y="262" width="22" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_4_di" bpmnElement="Flow_4">
+        <dc:Waypoint x="501" y="305"/>
+        <dc:Waypoint x="501" y="460"/>
+        <dc:Waypoint x="596" y="460"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="510" y="375" width="20" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_5_di" bpmnElement="Flow_5">
+        <dc:Waypoint x="716" y="460"/>
+        <dc:Waypoint x="776" y="460"/>
+      </bpmndi:BPMNEdge>
+
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>

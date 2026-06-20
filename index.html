@@ -18,12 +18,20 @@
   <button class="toolbar-btn" id="btn-import" title="Import APMN YAML">
     ↑ Import YAML
   </button>
+  <button class="toolbar-btn" id="btn-import-bpmn" title="Import BPMN 2.0 XML">
+    ↑ Import BPMN
+  </button>
   <button class="toolbar-btn primary" id="btn-export-yaml" title="Export as APMN YAML">
     ↓ Export YAML
   </button>
   <button class="toolbar-btn" id="btn-export-bpmn" title="Export as BPMN 2.0 XML">
     ↓ Export BPMN
   </button>
+
+  <div style="width:1px;height:24px;background:#334155;margin:0 4px"></div>
+
+  <button class="toolbar-btn" id="btn-expand-down"  title="Expand canvas downward">⊞ ↓</button>
+  <button class="toolbar-btn" id="btn-expand-right" title="Expand canvas rightward">⊞ →</button>
 
   <div style="width:1px;height:24px;background:#334155;margin:0 4px"></div>
 
@@ -39,6 +47,12 @@
 
   <div id="canvas-wrap">
     <div id="canvas"></div>
+    <!-- Floating zoom widget -->
+    <div id="zoom-widget">
+      <button id="zoom-in-float" title="Zoom in">+</button>
+      <button id="zoom-fit-float" title="Fit to screen">⊡</button>
+      <button id="zoom-out-float" title="Zoom out">−</button>
+    </div>
     <!-- APMN branding badge -->
     <div id="apmn-badge">apmn.kshetra.studio</div>
     <div id="apmn-badge-popup">

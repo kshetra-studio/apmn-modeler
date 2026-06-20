@@ -81,10 +81,21 @@ export async function importFromAPMN(modeler, yamlText) {
 
 function apmnToBpmn(doc) {
   const proc = doc.process || {}
-  const nodes = doc.nodes || []
+  const rawNodes = doc.nodes || []
   const flows = doc.flows || []
 
-  const shapes = nodes.map(n => _nodeToXml(n))
+  const nodes = rawNodes
+
+  // Pre-compute incoming/outgoing per node — required by bpmn-auto-layout
+  const incoming = {}
+  const outgoing = {}
+  for (const n of nodes) { incoming[n.id] = []; outgoing[n.id] = [] }
+  for (const f of flows) {
+    if (outgoing[f.source]) outgoing[f.source].push(f.id)
+    if (incoming[f.target]) incoming[f.target].push(f.id)
+  }
+
+  const shapes = nodes.map(n => _nodeToXml(n, incoming[n.id] || [], outgoing[n.id] || []))
   const edges  = flows.map(f => _flowToXml(f))
 
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -104,34 +115,37 @@ function apmnToBpmn(doc) {
 </bpmn:definitions>`
 }
 
-function _nodeToXml(n) {
+function _refs(ids, tag) {
+  return ids.map(id => `<${tag}>${id}</${tag}>`).join('')
+}
+
+function _nodeToXml(n, inIds = [], outIds = []) {
   const type = n.type
   const bpmnType = _bpmnTypeFor(type)
   const name = _esc(n.name || '')
   const apmnAttrs = _apmnAttrs(n)
   const apmnTypeAttr = !type.startsWith('_') ? ` apmn:type="${type}"` : ''
+  const children = _refs(inIds, 'bpmn:incoming') + _refs(outIds, 'bpmn:outgoing')
 
   if (bpmnType === 'bpmn:StartEvent')
-    return `<bpmn:startEvent id="${n.id}" name="${name}"/>`
+    return `<bpmn:startEvent id="${n.id}" name="${name}">${children}</bpmn:startEvent>`
   if (bpmnType === 'bpmn:EndEvent')
-    return `<bpmn:endEvent id="${n.id}" name="${name}"/>`
+    return `<bpmn:endEvent id="${n.id}" name="${name}">${children}</bpmn:endEvent>`
   if (bpmnType === 'bpmn:ExclusiveGateway')
-    return `<bpmn:exclusiveGateway id="${n.id}" name="${name}"${apmnTypeAttr}${apmnAttrs}/>`
+    return `<bpmn:exclusiveGateway id="${n.id}" name="${name}"${apmnTypeAttr}${apmnAttrs}>${children}</bpmn:exclusiveGateway>`
   if (bpmnType === 'bpmn:ParallelGateway')
-    return `<bpmn:parallelGateway id="${n.id}" name="${name}"/>`
+    return `<bpmn:parallelGateway id="${n.id}" name="${name}">${children}</bpmn:parallelGateway>`
   if (bpmnType === 'bpmn:IntermediateCatchEvent')
-    return `<bpmn:intermediateCatchEvent id="${n.id}" name="${name}">
-      <bpmn:timerEventDefinition/>
-    </bpmn:intermediateCatchEvent>`
+    return `<bpmn:intermediateCatchEvent id="${n.id}" name="${name}">${children}<bpmn:timerEventDefinition/></bpmn:intermediateCatchEvent>`
   if (bpmnType === 'bpmn:UserTask')
-    return `<bpmn:userTask id="${n.id}" name="${name}"${apmnTypeAttr}${apmnAttrs}/>`
+    return `<bpmn:userTask id="${n.id}" name="${name}"${apmnTypeAttr}${apmnAttrs}>${children}</bpmn:userTask>`
   if (bpmnType === 'bpmn:ManualTask')
-    return `<bpmn:manualTask id="${n.id}" name="${name}"/>`
+    return `<bpmn:manualTask id="${n.id}" name="${name}">${children}</bpmn:manualTask>`
   if (bpmnType === 'bpmn:ServiceTask')
-    return `<bpmn:serviceTask id="${n.id}" name="${name}"/>`
+    return `<bpmn:serviceTask id="${n.id}" name="${name}">${children}</bpmn:serviceTask>`
 
   // Default: task with APMN attrs
-  return `<bpmn:task id="${n.id}" name="${name}"${apmnTypeAttr}${apmnAttrs}/>`
+  return `<bpmn:task id="${n.id}" name="${name}"${apmnTypeAttr}${apmnAttrs}>${children}</bpmn:task>`
 }
 
 function _apmnAttrs(n) {

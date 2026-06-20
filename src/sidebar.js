@@ -1,6 +1,7 @@
-import { APMN_TASKS, APMN_GATES, BPMN_STANDARD, getTypeInfo } from './apmn-module/types.js'
+import { APMN_TASKS, APMN_GATES, BPMN_STANDARD } from './apmn-module/types.js'
 
 let _modeler = null
+let _activePopover = null
 
 export function buildSidebar(modeler) {
   _modeler = modeler
@@ -8,8 +9,8 @@ export function buildSidebar(modeler) {
   if (!sidebar) return
 
   const sections = [
-    { title: 'AI Tasks', items: APMN_TASKS },
-    { title: 'AI Gates', items: APMN_GATES },
+    { title: 'AI Tasks',      items: APMN_TASKS },
+    { title: 'AI Gates',      items: APMN_GATES },
     { title: 'BPMN Standard', items: BPMN_STANDARD },
   ]
 
@@ -23,78 +24,136 @@ export function buildSidebar(modeler) {
     }
   }
 
-  // Wire canvas drop target
-  const canvasEl = document.getElementById('canvas')
-  canvasEl.addEventListener('dragover', e => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'copy'
-  })
-  canvasEl.addEventListener('drop', e => {
-    e.preventDefault()
-    const apmnType = e.dataTransfer.getData('apmn-type')
-    if (!apmnType || !_modeler) return
-    const point = _clientToCanvas(e)
-    _createAt(apmnType, point)
-  })
+  // Close popover on outside click
+  document.addEventListener('click', () => closePopover())
 }
 
 function makeEntry(item) {
   const el = document.createElement('div')
   el.className = 'sidebar-entry'
-  el.title = item.label
-  el.draggable = true
+  el.title = ''  // suppress native tooltip — we have our own
   el.innerHTML = `
     <div class="sidebar-chip" style="background:${item.color}">
       <span class="sidebar-icon">${item.icon}</span>
     </div>
     <span class="sidebar-label">${item.label}</span>
+    <button class="sidebar-info-btn" title="About this node">ⓘ</button>
   `
 
-  el.addEventListener('dragstart', e => {
-    e.dataTransfer.effectAllowed = 'copy'
-    e.dataTransfer.setData('apmn-type', item.type)
-    // Transparent drag image so bpmn-js ghost shows instead
-    const ghost = document.createElement('div')
-    ghost.style.cssText = 'position:fixed;top:-9999px'
-    document.body.appendChild(ghost)
-    e.dataTransfer.setDragImage(ghost, 0, 0)
-    setTimeout(() => document.body.removeChild(ghost), 0)
+  const chip = el.querySelector('.sidebar-chip')
+  const infoBtn = el.querySelector('.sidebar-info-btn')
+
+  // Click chip → place shape at centre of current canvas viewport
+  chip.addEventListener('click', () => {
+    console.log('[APMN] chip clicked', item.type)
+    if (!_modeler) { console.warn('[APMN] modeler not ready'); return }
+    try {
+      const canvas   = _modeler.get('canvas')
+      const modeling = _modeler.get('modeling')
+      const vbox     = canvas.viewbox()
+      console.log('[APMN] viewbox', vbox)
+      const x = Math.round(vbox.x + vbox.width  / 2 + (Math.random() - 0.5) * 80)
+      const y = Math.round(vbox.y + vbox.height / 2 + (Math.random() - 0.5) * 60)
+      console.log('[APMN] placing at', x, y)
+      const shape = _makeShape(item)
+      const root  = canvas.getRootElement()
+      console.log('[APMN] root', root)
+      modeling.createShape(shape, { x, y }, root)
+      console.log('[APMN] shape created ok')
+    } catch (err) {
+      console.error('[APMN] createShape failed', err)
+    }
+  })
+
+  // ── Hover tooltip ─────────────────────────────────────────────────────────
+  el.addEventListener('mouseenter', () => {
+    showTooltip(el, `Click to add · ${item.description}`)
+  })
+  el.addEventListener('mouseleave', () => {
+    hideTooltip()
+  })
+
+  // ── ⓘ popover ─────────────────────────────────────────────────────────────
+  infoBtn.addEventListener('click', e => {
+    e.stopPropagation()
+    togglePopover(infoBtn, item)
   })
 
   return el
 }
 
-function _clientToCanvas(event) {
-  const canvas = _modeler.get('canvas')
-  const container = document.getElementById('canvas')
-  const rect = container.getBoundingClientRect()
-  const vb = canvas.viewbox()
-  return {
-    x: vb.x + (event.clientX - rect.left) / vb.scale,
-    y: vb.y + (event.clientY - rect.top) / vb.scale,
+function _makeShape(item) {
+  // Map APMN bpmnType (apmn:AgentTask) → BPMN base type for elementFactory
+  const isApmnItem = !item.type.startsWith('_')
+  let elementType = item.bpmnType || 'bpmn:Task'
+  if (isApmnItem) {
+    // Derive BPMN base from the apmn: moddle superClass
+    if (elementType.includes('Gate')) elementType = 'bpmn:ExclusiveGateway'
+    else if (elementType.includes('Event')) elementType = 'bpmn:IntermediateCatchEvent'
+    else elementType = 'bpmn:Task'
   }
-}
 
-function _createAt(apmnType, point) {
-  const info = getTypeInfo(apmnType)
-  const isBpmnStandard = apmnType.startsWith('_')
-
-  const bpmnType = info?.bpmnType || 'bpmn:Task'
-  const isGate = bpmnType.includes('Gateway')
-  const isEvent = bpmnType.includes('Event')
+  const isGate  = elementType.includes('Gateway')
+  const isEvent = elementType.includes('Event')
   const w = (isGate || isEvent) ? 50 : 120
   const h = (isGate || isEvent) ? 50 : 80
 
-  const elementFactory = _modeler.get('elementFactory')
-  const modeling = _modeler.get('modeling')
-  const canvas = _modeler.get('canvas')
+  const shape = _modeler.get('elementFactory').createShape({ type: elementType, width: w, height: h })
 
-  const shape = elementFactory.createShape({ type: bpmnType, width: w, height: h })
+  // Tag APMN items so the renderer applies custom colour/icon
+  if (isApmnItem) {
+    shape.businessObject.$attrs['apmn:type'] = item.type
+  }
+  return shape
+}
 
-  if (!isBpmnStandard && info) {
-    shape.businessObject.$attrs = shape.businessObject.$attrs || {}
-    shape.businessObject.$attrs['apmn:type'] = apmnType
+// ── Tooltip ───────────────────────────────────────────────────────────────────
+
+let _tooltip = null
+
+function showTooltip(anchor, text) {
+  if (!text) return
+  hideTooltip()
+  _tooltip = document.createElement('div')
+  _tooltip.className = 'sidebar-tooltip'
+  _tooltip.textContent = text
+  document.body.appendChild(_tooltip)
+
+  const rect = anchor.getBoundingClientRect()
+  _tooltip.style.top  = `${rect.top + window.scrollY + rect.height / 2 - _tooltip.offsetHeight / 2}px`
+  _tooltip.style.left = `${rect.right + 8}px`
+}
+
+function hideTooltip() {
+  if (_tooltip) { _tooltip.remove(); _tooltip = null }
+}
+
+// ── Popover ───────────────────────────────────────────────────────────────────
+
+function togglePopover(anchor, item) {
+  if (_activePopover) {
+    closePopover()
+    return
   }
 
-  modeling.createShape(shape, point, canvas.getRootElement())
+  const pop = document.createElement('div')
+  pop.className = 'sidebar-popover'
+  pop.innerHTML = `
+    <div class="pop-type" style="color:${item.color}">${item.icon} ${item.label}</div>
+    <div class="pop-desc">${item.description}</div>
+    ${item.docsUrl ? `<a class="pop-link" href="${item.docsUrl}" target="_blank">View documentation ↗</a>` : ''}
+  `
+  document.body.appendChild(pop)
+  _activePopover = pop
+
+  const rect = anchor.getBoundingClientRect()
+  const popH = 140
+  pop.style.left = `${rect.right + 8}px`
+  pop.style.top  = `${Math.min(rect.top, window.innerHeight - popH - 8)}px`
+
+  pop.addEventListener('click', e => e.stopPropagation())
+}
+
+function closePopover() {
+  if (_activePopover) { _activePopover.remove(); _activePopover = null }
 }

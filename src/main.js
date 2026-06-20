@@ -6,22 +6,27 @@ import 'bpmn-js/dist/assets/bpmn-js.css'
 import BpmnModeler from 'bpmn-js/lib/Modeler'
 import apmnModule from './apmn-module/index.js'
 import { exportToAPMN, importFromAPMN } from './io/yaml.js'
+import { layoutProcess } from 'bpmn-auto-layout'
 import { getTypeInfo, APMN_PROPS } from './apmn-module/types.js'
 import { buildSidebar } from './sidebar.js'
+import { setupPage, fitToPage, expandPage } from './page.js'
+import apmnModdle from './apmn-module/apmn-moddle.json'
 
 // ── Init modeler ─────────────────────────────────────────────────────────────
 
 const modeler = new BpmnModeler({
   container: '#canvas',
   additionalModules: [apmnModule],
-  moddleExtensions: {},
+  // moddleExtensions registered separately below after confirming legacy attrs still work
 })
 
 // Load starter diagram and build sidebar after modeler is ready
 fetch('/starter.bpmn')
   .then(r => r.text())
-  .then(xml => modeler.importXML(xml))
+  .then(xml => layoutProcess(xml))
+  .then(laidOutXml => modeler.importXML(laidOutXml))
   .then(() => {
+    setupPage(modeler)
     buildSidebar(modeler)
     modeler.get('canvas').zoom('fit-viewport', 'auto')
   })
@@ -49,9 +54,11 @@ function renderProps(element) {
   }
 
   const bo = element.businessObject
-  const apmnType = bo?.$attrs?.['apmn:type']
-  const info = apmnType ? getTypeInfo(apmnType) : null
-  const propKeys = (apmnType && APMN_PROPS[apmnType]) || []
+  // Prefer typed $type (moddleExtension), fall back to legacy $attrs
+  const rawType = bo.$type?.startsWith('apmn:') ? bo.$type.replace('apmn:', '') : null
+  const typeKey = rawType ? rawType.charAt(0).toLowerCase() + rawType.slice(1) : bo?.$attrs?.['apmn:type']
+  const info = typeKey ? getTypeInfo(typeKey) : null
+  const propKeys = (typeKey && APMN_PROPS[typeKey]) || []
 
   let html = ''
 
@@ -76,7 +83,7 @@ function renderProps(element) {
   if (propKeys.length) {
     html += `<div class="prop-section-title">APMN Properties</div>`
     for (const key of propKeys) {
-      const val = bo.$attrs?.[`apmn:${key}`] || ''
+      const val = bo[key] ?? bo.$attrs?.[`apmn:${key}`] ?? ''
       const isLong = ['system_prompt', 'input_schema', 'attributes', 'routes', 'triggers', 'watches'].includes(key)
       html += field(key, key.replace(/_/g, ' '), val, isLong ? 'textarea' : 'input')
     }
@@ -93,6 +100,8 @@ function renderProps(element) {
 
       if (prop === 'name') {
         modeling.updateLabel(element, value)
+      } else if (bo.$type?.startsWith('apmn:')) {
+        modeling.updateProperties(element, { [prop]: value })
       } else {
         const attrs = { ...(bo.$attrs || {}) }
         attrs[`apmn:${prop}`] = value
@@ -189,6 +198,29 @@ document.getElementById('btn-close-import').addEventListener('click', () => {
   document.getElementById('import-modal').classList.remove('open')
 })
 
+// ── Import BPMN XML ──────────────────────────────────────────────────────────
+
+document.getElementById('btn-import-bpmn').addEventListener('click', () => {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = '.bpmn,.xml'
+  input.onchange = async e => {
+    const file = e.target.files[0]
+    if (!file) return
+    try {
+      const xml = await file.text()
+      await modeler.importXML(xml)
+      setupPage(modeler)
+      modeler.get('canvas').zoom('fit-viewport', 'auto')
+      toast('Imported ' + file.name)
+    } catch (err) {
+      console.error(err)
+      toast('Import failed: ' + err.message, 'error')
+    }
+  }
+  input.click()
+})
+
 // ── Export BPMN XML ──────────────────────────────────────────────────────────
 
 document.getElementById('btn-export-bpmn').addEventListener('click', async () => {
@@ -202,15 +234,18 @@ document.getElementById('btn-export-bpmn').addEventListener('click', async () =>
 
 // ── Zoom controls ────────────────────────────────────────────────────────────
 
-document.getElementById('btn-zoom-in').addEventListener('click', () => {
-  modeler.get('zoomScroll').stepZoom(1)
-})
-document.getElementById('btn-zoom-out').addEventListener('click', () => {
-  modeler.get('zoomScroll').stepZoom(-1)
-})
-document.getElementById('btn-zoom-fit').addEventListener('click', () => {
-  modeler.get('canvas').zoom('fit-viewport', 'auto')
-})
+function zoomIn()  { modeler.get('zoomScroll').stepZoom(1) }
+function zoomOut() { modeler.get('zoomScroll').stepZoom(-1) }
+function zoomFit() { fitToPage(modeler.get('canvas')) }
+
+document.getElementById('btn-zoom-in').addEventListener('click', zoomIn)
+document.getElementById('btn-zoom-out').addEventListener('click', zoomOut)
+document.getElementById('btn-zoom-fit').addEventListener('click', zoomFit)
+document.getElementById('zoom-in-float').addEventListener('click', zoomIn)
+document.getElementById('zoom-out-float').addEventListener('click', zoomOut)
+document.getElementById('zoom-fit-float').addEventListener('click', zoomFit)
+document.getElementById('btn-expand-down').addEventListener('click',  () => expandPage('down'))
+document.getElementById('btn-expand-right').addEventListener('click', () => expandPage('right'))
 
 // ── Toast ────────────────────────────────────────────────────────────────────
 

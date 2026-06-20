@@ -14,21 +14,46 @@ export default class APMNRenderer extends BaseRenderer {
   }
 
   canRender(element) {
-    return !!(element.businessObject?.$attrs?.['apmn:type'])
+    const bo = element.businessObject
+    if (!bo) return false
+    if (bo.$type?.startsWith('apmn:')) return true
+    if (bo.$attrs?.['apmn:type']) return true
+    // Color start/end events to match APMN palette
+    return bo.$type === 'bpmn:StartEvent' || bo.$type === 'bpmn:EndEvent'
+  }
+
+  _resolveTypeInfo(element) {
+    const bo = element.businessObject
+    if (bo.$type?.startsWith('apmn:')) {
+      const raw = bo.$type.replace('apmn:', '')
+      const key = raw.charAt(0).toLowerCase() + raw.slice(1)
+      return getTypeInfo(key)
+    }
+    const legacyKey = bo.$attrs?.['apmn:type']
+    return legacyKey ? getTypeInfo(legacyKey) : null
   }
 
   drawShape(parentNode, element) {
-    const apmnType = element.businessObject.$attrs['apmn:type']
-    const info = getTypeInfo(apmnType)
-    const { width, height } = element
+    const bo = element.businessObject
 
+    // Native BPMN start/end events — draw with APMN green/red coloring
+    if (bo.$type === 'bpmn:StartEvent') {
+      return this._drawEvent(parentNode, element, { icon: '', color: '#16a34a', type: '_startEvent' })
+    }
+    if (bo.$type === 'bpmn:EndEvent') {
+      return this._drawEvent(parentNode, element, { icon: '', color: '#dc2626', type: '_endEvent' })
+    }
+
+    const info = this._resolveTypeInfo(element)
     if (!info) return this.bpmnRenderer.drawShape(parentNode, element)
 
-    const isGate = info.bpmnType === 'bpmn:ExclusiveGateway'
+    // Detect shape class by the BPMN base type of the element, not the info.bpmnType
+    const baseType = bo.$type || ''
+    const isGate  = baseType.includes('Gateway')
+    const isEvent = baseType.includes('Event')
 
-    if (isGate) {
-      return this._drawGate(parentNode, element, info)
-    }
+    if (isGate)  return this._drawGate(parentNode, element, info)
+    if (isEvent) return this._drawEvent(parentNode, element, info)
     return this._drawTask(parentNode, element, info)
   }
 
@@ -109,27 +134,26 @@ export default class APMNRenderer extends BaseRenderer {
     return rect
   }
 
-  _drawGate(parentNode, element, info) {
+  _drawEvent(parentNode, element, info) {
     const { width, height } = element
     const cx = width / 2
     const cy = height / 2
-    const r = Math.min(width, height) / 2 - 2
+    const r  = Math.min(width, height) / 2 - 2
 
-    // Diamond shape
-    const diamond = svgCreate('polygon')
-    const pts = `${cx},${cy - r} ${cx + r},${cy} ${cx},${cy + r} ${cx - r},${cy}`
-    svgAttr(diamond, {
-      points: pts,
+    const isEnd = info.type === '_endEvent'
+
+    const circle = svgCreate('circle')
+    svgAttr(circle, {
+      cx, cy, r,
       fill: info.color,
       stroke: this._darken(info.color),
-      strokeWidth: 2,
+      strokeWidth: isEnd ? 4 : 2,
     })
-    svgAppend(parentNode, diamond)
+    svgAppend(parentNode, circle)
 
-    // Icon in centre
     const icon = svgCreate('text')
     svgAttr(icon, {
-      x: cx, y: cy - 5,
+      x: cx, y: cy + 1,
       textAnchor: 'middle',
       dominantBaseline: 'middle',
       fill: 'white',
@@ -139,34 +163,49 @@ export default class APMNRenderer extends BaseRenderer {
     icon.textContent = info.icon
     svgAppend(parentNode, icon)
 
-    // Short type label
-    const shortLabel = {
-      confidenceGate: 'CONF',
-      reasoningGate: 'RSNG',
-      modelVersionGate: 'MVER',
-      semanticGate: 'SEM',
-      mcpGate: 'MCP',
-      escapeGate: 'ESC',
-    }[info.type] || ''
+    return circle
+  }
 
-    const label = svgCreate('text')
-    svgAttr(label, {
-      x: cx, y: cy + 10,
-      textAnchor: 'middle',
-      dominantBaseline: 'middle',
-      fill: 'white',
-      fontSize: 8,
-      fontWeight: '700',
-      fontFamily: 'system-ui, sans-serif',
-      letterSpacing: '0.04em',
+  _drawGate(parentNode, element, info) {
+    const { width, height } = element
+    const cx = width / 2
+    const cy = height / 2
+    const r = Math.min(width, height) / 2 - 1
+
+    // Diamond shape
+    const pts = `${cx},${cy - r} ${cx + r},${cy} ${cx},${cy + r} ${cx - r},${cy}`
+    const diamond = svgCreate('polygon')
+    svgAttr(diamond, {
+      points: pts,
+      fill: info.color,
+      stroke: this._darken(info.color),
+      strokeWidth: 2,
     })
-    label.textContent = shortLabel
-    svgAppend(parentNode, label)
+    svgAppend(parentNode, diamond)
+
+    if (info.icon) {
+      // Icon fits inside the diamond's inscribed circle (radius r/√2 ≈ r*0.7)
+      // Use fontSize 14 for single glyphs, 11 for two-char
+      const fontSize = info.icon.length > 1 ? 11 : 15
+      const icon = svgCreate('text')
+      svgAttr(icon, {
+        x: cx, y: cy + 1,
+        textAnchor: 'middle',
+        dominantBaseline: 'middle',
+        fill: 'white',
+        fontSize,
+        fontWeight: '700',
+        fontFamily: 'system-ui, "Segoe UI", sans-serif',
+      })
+      icon.textContent = info.icon
+      svgAppend(parentNode, icon)
+    }
 
     return diamond
   }
 
   getShapePath(shape) {
+    // All bpmn:* types (including StartEvent, EndEvent, ExclusiveGateway, Task) delegate directly
     return this.bpmnRenderer.getShapePath(shape)
   }
 

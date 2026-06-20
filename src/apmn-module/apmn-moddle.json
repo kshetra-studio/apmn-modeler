@@ -1,0 +1,133 @@
+{
+  "name": "APMN",
+  "uri": "http://apmn.kshetra.studio/ns/1.0",
+  "prefix": "apmn",
+  "xml": { "tagAlias": "lowerCase" },
+  "types": [
+    {
+      "name": "AgentTask",
+      "superClass": ["bpmn:Task"],
+      "properties": [
+        { "name": "model",               "isAttr": true, "type": "String" },
+        { "name": "system_prompt",       "isAttr": true, "type": "String" },
+        { "name": "tools",               "isAttr": true, "type": "String" },
+        { "name": "temperature",         "isAttr": true, "type": "String" },
+        { "name": "confidence_threshold","isAttr": true, "type": "String" }
+      ]
+    },
+    {
+      "name": "RagTask",
+      "superClass": ["bpmn:Task"],
+      "properties": [
+        { "name": "vector_store",         "isAttr": true, "type": "String" },
+        { "name": "top_k",                "isAttr": true, "type": "String" },
+        { "name": "similarity_threshold", "isAttr": true, "type": "String" },
+        { "name": "query_from",           "isAttr": true, "type": "String" }
+      ]
+    },
+    {
+      "name": "McpToolTask",
+      "superClass": ["bpmn:Task"],
+      "properties": [
+        { "name": "server",       "isAttr": true, "type": "String" },
+        { "name": "tool",         "isAttr": true, "type": "String" },
+        { "name": "input_schema", "isAttr": true, "type": "String" }
+      ]
+    },
+    {
+      "name": "HumanInLoopTask",
+      "superClass": ["bpmn:Task"],
+      "properties": [
+        { "name": "timeout",              "isAttr": true, "type": "String" },
+        { "name": "escalate_to",          "isAttr": true, "type": "String" },
+        { "name": "confidence_threshold", "isAttr": true, "type": "String" }
+      ]
+    },
+    {
+      "name": "AgentHandoff",
+      "superClass": ["bpmn:Task"],
+      "properties": [
+        { "name": "target_agent",  "isAttr": true, "type": "String" },
+        { "name": "model",         "isAttr": true, "type": "String" },
+        { "name": "context_pass",  "isAttr": true, "type": "String" }
+      ]
+    },
+    {
+      "name": "MemoryTask",
+      "superClass": ["bpmn:Task"],
+      "properties": [
+        { "name": "store",      "isAttr": true, "type": "String" },
+        { "name": "operation",  "isAttr": true, "type": "String" },
+        { "name": "key",        "isAttr": true, "type": "String" },
+        { "name": "value_from", "isAttr": true, "type": "String" }
+      ]
+    },
+    {
+      "name": "VectorTask",
+      "superClass": ["bpmn:Task"],
+      "properties": [
+        { "name": "vector_store",     "isAttr": true, "type": "String" },
+        { "name": "operation",        "isAttr": true, "type": "String" },
+        { "name": "embedding_model",  "isAttr": true, "type": "String" }
+      ]
+    },
+    {
+      "name": "ObserveEvent",
+      "superClass": ["bpmn:Task"],
+      "properties": [
+        { "name": "platform",    "isAttr": true, "type": "String" },
+        { "name": "trace_name",  "isAttr": true, "type": "String" },
+        { "name": "attributes",  "isAttr": true, "type": "String" }
+      ]
+    },
+    {
+      "name": "ConfidenceGate",
+      "superClass": ["bpmn:ExclusiveGateway"],
+      "properties": [
+        { "name": "source", "isAttr": true, "type": "String" },
+        { "name": "routes", "isAttr": true, "type": "String" }
+      ]
+    },
+    {
+      "name": "ReasoningGate",
+      "superClass": ["bpmn:ExclusiveGateway"],
+      "properties": [
+        { "name": "routes", "isAttr": true, "type": "String" }
+      ]
+    },
+    {
+      "name": "ModelVersionGate",
+      "superClass": ["bpmn:ExclusiveGateway"],
+      "properties": [
+        { "name": "routes", "isAttr": true, "type": "String" }
+      ]
+    },
+    {
+      "name": "SemanticGate",
+      "superClass": ["bpmn:ExclusiveGateway"],
+      "properties": [
+        { "name": "routes", "isAttr": true, "type": "String" }
+      ]
+    },
+    {
+      "name": "McpGate",
+      "superClass": ["bpmn:ExclusiveGateway"],
+      "properties": [
+        { "name": "server", "isAttr": true, "type": "String" },
+        { "name": "tool",   "isAttr": true, "type": "String" },
+        { "name": "routes", "isAttr": true, "type": "String" }
+      ]
+    },
+    {
+      "name": "EscapeGate",
+      "superClass": ["bpmn:ExclusiveGateway"],
+      "properties": [
+        { "name": "watches",          "isAttr": true, "type": "String" },
+        { "name": "confidence_floor", "isAttr": true, "type": "String" },
+        { "name": "triggers",         "isAttr": true, "type": "String" }
+      ]
+    }
+  ],
+  "enumerations": [],
+  "associations": []
+}

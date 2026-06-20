@@ -1,5 +1,10 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+html, body {
+  width: 100%;
+  height: 100%;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: #0f172a;
@@ -74,7 +79,7 @@ body {
 #canvas-wrap {
   flex: 1;
   position: relative;
-  background: #f8fafc;
+  background: #dde3ea;
   overflow: hidden;
 }
 
@@ -83,6 +88,9 @@ body {
 /* ── Hide bpmn-js native palette + bpmn.io watermark ────────────────────── */
 .djs-palette { display: none !important; }
 .bjs-powered-by { display: none !important; }
+
+/* ── Let our gray canvas background show through ─────────────────────────── */
+.djs-container { background: transparent !important; }
 
 /* ── APMN Sidebar ────────────────────────────────────────────────────────── */
 #apmn-sidebar {
@@ -128,14 +136,14 @@ body {
   gap: 3px;
   padding: 4px 2px;
   border-radius: 8px;
-  cursor: grab;
+  cursor: pointer;
   width: 68px;
   transition: background 0.12s;
   user-select: none;
 }
 
 .sidebar-entry:hover { background: #334155; }
-.sidebar-entry:active { cursor: grabbing; }
+.sidebar-entry:active .sidebar-chip { transform: scale(0.93); }
 
 .sidebar-chip {
   width: 40px;
@@ -380,6 +388,109 @@ textarea.prop-input { resize: vertical; min-height: 64px; }
   padding: 12px 16px;
   border-top: 1px solid #334155;
   justify-content: flex-end;
+}
+
+/* ── Sidebar info button ─────────────────────────────────────────────────── */
+.sidebar-info-btn {
+  background: transparent;
+  border: none;
+  color: #334155;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+  line-height: 1;
+  display: block;
+  border-radius: 99px;
+  transition: background 0.12s, color 0.12s;
+}
+.sidebar-entry:hover .sidebar-info-btn {
+  color: #94a3b8;
+  background: #0f172a;
+}
+.sidebar-info-btn:hover {
+  color: #f1f5f9 !important;
+  background: #3b82f6 !important;
+}
+
+/* ── Sidebar tooltip ─────────────────────────────────────────────────────── */
+.sidebar-tooltip {
+  position: fixed;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 11px;
+  color: #cbd5e1;
+  line-height: 1.4;
+  max-width: 220px;
+  z-index: 500;
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,.5);
+}
+
+/* ── Sidebar popover ─────────────────────────────────────────────────────── */
+.sidebar-popover {
+  position: fixed;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 14px 16px;
+  width: 260px;
+  z-index: 500;
+  box-shadow: 0 8px 30px rgba(0,0,0,.6);
+}
+.pop-type {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.pop-desc {
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+.pop-link {
+  display: block;
+  font-size: 11px;
+  color: #60a5fa;
+  text-decoration: none;
+  border-top: 1px solid #334155;
+  padding-top: 8px;
+}
+.pop-link:hover { text-decoration: underline; }
+
+/* ── Floating zoom widget ────────────────────────────────────────────────── */
+#zoom-widget {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 10;
+}
+
+#zoom-widget button {
+  width: 32px;
+  height: 32px;
+  background: rgba(15,23,42,0.8);
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: #94a3b8;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+#zoom-widget button:hover {
+  background: rgba(30,41,59,0.95);
+  color: #f1f5f9;
+  border-color: #64748b;
 }
 
 /* ── APMN canvas badge ───────────────────────────────────────────────────── */
