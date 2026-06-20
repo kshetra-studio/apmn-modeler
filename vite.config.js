@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 
 export default defineConfig({
+  plugins: [],
   server: {
     port: parseInt(process.env.PORT || '5174'),
     strictPort: false,
