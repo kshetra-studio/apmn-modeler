@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Visual drag-and-drop modeler for APMN — AI Process Model and Notation",
   "license": "MIT",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
