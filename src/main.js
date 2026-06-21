@@ -32,6 +32,17 @@ fetch('/starter.bpmn')
   })
   .catch(console.error)
 
+// ── Embedded mode: receive converted APMN from parent frame ──────────────────
+window.addEventListener('message', async (event) => {
+  if (event.data?.type !== 'load-yaml') return
+  try {
+    await importFromAPMN(modeler, event.data.yaml)
+    try { modeler.get('canvas').zoom('fit-viewport', 'auto') } catch (_) {}
+  } catch (e) {
+    console.error('[APMN] postMessage import failed:', e)
+  }
+})
+
 // ── Properties panel ─────────────────────────────────────────────────────────
 
 let selectedElement = null
