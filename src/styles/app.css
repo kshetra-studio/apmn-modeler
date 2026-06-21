@@ -91,8 +91,11 @@ body {
 .djs-palette { display: none !important; }
 .bjs-powered-by { display: none !important; }
 
-/* ── Let our gray canvas background show through ─────────────────────────── */
+/* ── Transparent bpmn-js internals so dot-grid shows through everywhere ─── */
 .djs-container { background: transparent !important; }
+.djs-container > svg { background: transparent !important; }
+/* APMN page background rect — make transparent so canvas dot-grid shows through */
+.apmn-page-bg rect { fill: transparent !important; }
 
 /* ── APMN Sidebar ────────────────────────────────────────────────────────── */
 #apmn-sidebar {
