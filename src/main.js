@@ -28,7 +28,7 @@ fetch('/starter.bpmn')
   .then(() => {
     setupPage(modeler)
     buildSidebar(modeler)
-    modeler.get('canvas').zoom('fit-viewport', 'auto')
+    try { modeler.get('canvas').zoom('fit-viewport', 'auto') } catch (_) {}
   })
   .catch(console.error)
 

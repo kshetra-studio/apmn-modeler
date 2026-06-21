@@ -138,7 +138,7 @@ export default class APMNRenderer extends BaseRenderer {
     const { width, height } = element
     const cx = width / 2
     const cy = height / 2
-    const r  = Math.min(width, height) / 2 - 2
+    const r  = Math.max(0, Math.min(width, height) / 2 - 2)
 
     const isEnd = info.type === '_endEvent'
 
