@@ -1,4 +1,5 @@
 import { APMN_TASKS, APMN_GATES, BPMN_STANDARD } from './apmn-module/types.js'
+import { iconToSvg } from './apmn-module/icons.js'
 
 let _modeler = null
 let _activePopover = null
@@ -34,7 +35,7 @@ function makeEntry(item) {
   el.title = ''  // suppress native tooltip — we have our own
   el.innerHTML = `
     <div class="sidebar-chip" style="background:${item.color}">
-      <span class="sidebar-icon">${item.icon}</span>
+      ${item.svgIcon ? iconToSvg(item.svgIcon, 16) : `<span class="sidebar-icon">${item.icon}</span>`}
     </div>
     <span class="sidebar-label">${item.label}</span>
     <button class="sidebar-info-btn" title="About this node">ⓘ</button>

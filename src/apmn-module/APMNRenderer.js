@@ -1,6 +1,7 @@
 import BaseRenderer from 'diagram-js/lib/draw/BaseRenderer'
 import { append as svgAppend, create as svgCreate, attr as svgAttr } from 'tiny-svg'
 import { getTypeInfo } from './types.js'
+import { renderIcon, iconToSvg } from './icons.js'
 
 const HIGH_PRIORITY = 1500
 
@@ -18,7 +19,6 @@ export default class APMNRenderer extends BaseRenderer {
     if (!bo) return false
     if (bo.$type?.startsWith('apmn:')) return true
     if (bo.$attrs?.['apmn:type']) return true
-    // Color start/end events to match APMN palette
     return bo.$type === 'bpmn:StartEvent' || bo.$type === 'bpmn:EndEvent'
   }
 
@@ -36,18 +36,16 @@ export default class APMNRenderer extends BaseRenderer {
   drawShape(parentNode, element) {
     const bo = element.businessObject
 
-    // Native BPMN start/end events — draw with APMN green/red coloring
     if (bo.$type === 'bpmn:StartEvent') {
-      return this._drawEvent(parentNode, element, { icon: '', color: '#16a34a', type: '_startEvent' })
+      return this._drawEvent(parentNode, element, { icon: '●', color: '#16a34a', type: '_startEvent' })
     }
     if (bo.$type === 'bpmn:EndEvent') {
-      return this._drawEvent(parentNode, element, { icon: '', color: '#dc2626', type: '_endEvent' })
+      return this._drawEvent(parentNode, element, { icon: '◉', color: '#dc2626', type: '_endEvent' })
     }
 
     const info = this._resolveTypeInfo(element)
     if (!info) return this.bpmnRenderer.drawShape(parentNode, element)
 
-    // Detect shape class by the BPMN base type of the element, not the info.bpmnType
     const baseType = bo.$type || ''
     const isGate  = baseType.includes('Gateway')
     const isEvent = baseType.includes('Event')
@@ -60,74 +58,62 @@ export default class APMNRenderer extends BaseRenderer {
   _drawTask(parentNode, element, info) {
     const { width, height } = element
 
-    // Rounded rect background
+    // Background rect
     const rect = svgCreate('rect')
     svgAttr(rect, {
-      x: 0, y: 0,
-      width, height,
-      rx: 8, ry: 8,
+      x: 0, y: 0, width, height, rx: 8, ry: 8,
       fill: info.color,
       stroke: this._darken(info.color),
-      strokeWidth: 2,
+      'stroke-width': 1.5,
     })
     svgAppend(parentNode, rect)
 
     // Top colour strip
     const strip = svgCreate('rect')
-    svgAttr(strip, {
-      x: 0, y: 0,
-      width, height: 6,
-      rx: 8, ry: 8,
-      fill: this._darken(info.color),
-    })
+    svgAttr(strip, { x: 0, y: 0, width, height: 5, rx: 8, ry: 8, fill: this._darken(info.color) })
     svgAppend(parentNode, strip)
-
-    // Fix strip corners at bottom
     const stripFix = svgCreate('rect')
-    svgAttr(stripFix, { x: 0, y: 3, width, height: 4, fill: this._darken(info.color) })
+    svgAttr(stripFix, { x: 0, y: 3, width, height: 3, fill: this._darken(info.color) })
     svgAppend(parentNode, stripFix)
 
-    // Icon
-    const icon = svgCreate('text')
-    svgAttr(icon, {
-      x: width / 2, y: height / 2 - 6,
-      textAnchor: 'middle',
-      dominantBaseline: 'middle',
-      fill: 'white',
-      fontSize: 20,
-      fontFamily: 'system-ui, sans-serif',
-    })
-    icon.textContent = info.icon
-    svgAppend(parentNode, icon)
+    // SVG icon centred in upper portion
+    const iconCy = height / 2 - 8
+    if (info.svgIcon) {
+      renderIcon(svgCreate, svgAttr, svgAppend, parentNode, info.svgIcon, width / 2, iconCy, 20)
+    } else {
+      const icon = svgCreate('text')
+      svgAttr(icon, {
+        x: width / 2, y: iconCy,
+        'text-anchor': 'middle', 'dominant-baseline': 'middle',
+        fill: 'white', 'font-size': 18, 'font-family': 'system-ui, sans-serif',
+      })
+      icon.textContent = info.icon
+      svgAppend(parentNode, icon)
+    }
 
-    // Label
+    // Type label (small caps, below icon)
     const label = svgCreate('text')
     svgAttr(label, {
-      x: width / 2, y: height / 2 + 16,
-      textAnchor: 'middle',
-      dominantBaseline: 'middle',
-      fill: 'white',
-      fontSize: 10,
-      fontWeight: '600',
-      fontFamily: 'system-ui, sans-serif',
-      letterSpacing: '0.02em',
+      x: width / 2, y: height - 10,
+      'text-anchor': 'middle', 'dominant-baseline': 'middle',
+      fill: 'rgba(255,255,255,0.75)', 'font-size': 9,
+      'font-weight': '700', 'font-family': 'system-ui, sans-serif',
+      'letter-spacing': '0.06em',
     })
     label.textContent = info.label.toUpperCase()
     svgAppend(parentNode, label)
 
-    // Element name below label
+    // Element name (if set)
     const name = element.businessObject.name
     if (name) {
       const nameEl = svgCreate('text')
       svgAttr(nameEl, {
-        x: width / 2, y: height - 10,
-        textAnchor: 'middle',
-        dominantBaseline: 'middle',
-        fill: 'rgba(255,255,255,0.85)',
-        fontSize: 11,
-        fontFamily: 'system-ui, sans-serif',
+        x: width / 2, y: height / 2 + 6,
+        'text-anchor': 'middle', 'dominant-baseline': 'middle',
+        fill: 'rgba(255,255,255,0.92)', 'font-size': 11,
+        'font-family': 'system-ui, sans-serif',
       })
-      nameEl.textContent = name.length > 18 ? name.slice(0, 17) + '…' : name
+      nameEl.textContent = name.length > 16 ? name.slice(0, 15) + '…' : name
       svgAppend(parentNode, nameEl)
     }
 
@@ -139,7 +125,6 @@ export default class APMNRenderer extends BaseRenderer {
     const cx = width / 2
     const cy = height / 2
     const r  = Math.max(0, Math.min(width, height) / 2 - 2)
-
     const isEnd = info.type === '_endEvent'
 
     const circle = svgCreate('circle')
@@ -147,21 +132,22 @@ export default class APMNRenderer extends BaseRenderer {
       cx, cy, r,
       fill: info.color,
       stroke: this._darken(info.color),
-      strokeWidth: isEnd ? 4 : 2,
+      'stroke-width': isEnd ? 4 : 2,
     })
     svgAppend(parentNode, circle)
 
-    const icon = svgCreate('text')
-    svgAttr(icon, {
-      x: cx, y: cy + 1,
-      textAnchor: 'middle',
-      dominantBaseline: 'middle',
-      fill: 'white',
-      fontSize: 14,
-      fontFamily: 'system-ui, sans-serif',
-    })
-    icon.textContent = info.icon
-    svgAppend(parentNode, icon)
+    if (info.svgIcon) {
+      renderIcon(svgCreate, svgAttr, svgAppend, parentNode, info.svgIcon, cx, cy, Math.max(10, r * 0.9))
+    } else {
+      const icon = svgCreate('text')
+      svgAttr(icon, {
+        x: cx, y: cy + 1,
+        'text-anchor': 'middle', 'dominant-baseline': 'middle',
+        fill: 'white', 'font-size': 14, 'font-family': 'system-ui, sans-serif',
+      })
+      icon.textContent = info.icon
+      svgAppend(parentNode, icon)
+    }
 
     return circle
   }
@@ -170,32 +156,29 @@ export default class APMNRenderer extends BaseRenderer {
     const { width, height } = element
     const cx = width / 2
     const cy = height / 2
-    const r = Math.min(width, height) / 2 - 1
+    const r  = Math.max(0, Math.min(width, height) / 2 - 1)
 
-    // Diamond shape
     const pts = `${cx},${cy - r} ${cx + r},${cy} ${cx},${cy + r} ${cx - r},${cy}`
     const diamond = svgCreate('polygon')
     svgAttr(diamond, {
       points: pts,
       fill: info.color,
       stroke: this._darken(info.color),
-      strokeWidth: 2,
+      'stroke-width': 2,
     })
     svgAppend(parentNode, diamond)
 
-    if (info.icon) {
-      // Icon fits inside the diamond's inscribed circle (radius r/√2 ≈ r*0.7)
-      // Use fontSize 14 for single glyphs, 11 for two-char
+    const innerR = r * 0.55
+    if (info.svgIcon) {
+      renderIcon(svgCreate, svgAttr, svgAppend, parentNode, info.svgIcon, cx, cy, innerR * 1.4)
+    } else if (info.icon) {
       const fontSize = info.icon.length > 1 ? 11 : 15
       const icon = svgCreate('text')
       svgAttr(icon, {
         x: cx, y: cy + 1,
-        textAnchor: 'middle',
-        dominantBaseline: 'middle',
-        fill: 'white',
-        fontSize,
-        fontWeight: '700',
-        fontFamily: 'system-ui, "Segoe UI", sans-serif',
+        'text-anchor': 'middle', 'dominant-baseline': 'middle',
+        fill: 'white', 'font-size': fontSize, 'font-weight': '700',
+        'font-family': 'system-ui, "Segoe UI", sans-serif',
       })
       icon.textContent = info.icon
       svgAppend(parentNode, icon)
@@ -205,7 +188,6 @@ export default class APMNRenderer extends BaseRenderer {
   }
 
   getShapePath(shape) {
-    // All bpmn:* types (including StartEvent, EndEvent, ExclusiveGateway, Task) delegate directly
     return this.bpmnRenderer.getShapePath(shape)
   }
 

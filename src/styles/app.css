@@ -79,7 +79,9 @@ body {
 #canvas-wrap {
   flex: 1;
   position: relative;
-  background: #dde3ea;
+  background-color: #f8fafc;
+  background-image: radial-gradient(circle, #cbd5e1 1px, transparent 1px);
+  background-size: 20px 20px;
   overflow: hidden;
 }
 
@@ -570,3 +572,20 @@ textarea.prop-input { resize: vertical; min-height: 64px; }
   z-index: 300;
 }
 #toast.show { opacity: 1; }
+
+/* ── Embedded mode (?embedded=true) ─────────────────────────────────────── */
+body.embedded #header .logo,
+body.embedded #header .badge,
+body.embedded .btn-embed-hide { display: none !important; }
+
+body.embedded .btn-embed-show { display: flex !important; }
+
+.btn-embed-show { display: none; }
+
+/* Sync button accent */
+.toolbar-btn.sync {
+  background: #4F46E5;
+  border-color: #6366F1;
+  color: white;
+}
+.toolbar-btn.sync:hover { background: #4338CA; }

@@ -32,7 +32,11 @@ fetch('/starter.bpmn')
   })
   .catch(console.error)
 
-// ── Embedded mode: receive converted APMN from parent frame ──────────────────
+// ── Embedded mode ─────────────────────────────────────────────────────────────
+const isEmbedded = new URLSearchParams(location.search).has('embedded')
+if (isEmbedded) document.body.classList.add('embedded')
+
+// Receive converted APMN from parent frame
 window.addEventListener('message', async (event) => {
   if (event.data?.type !== 'load-yaml') return
   try {
@@ -40,6 +44,18 @@ window.addEventListener('message', async (event) => {
     try { modeler.get('canvas').zoom('fit-viewport', 'auto') } catch (_) {}
   } catch (e) {
     console.error('[APMN] postMessage import failed:', e)
+  }
+})
+
+// Sync current diagram back to TwinTrack parent
+document.getElementById('btn-sync').addEventListener('click', () => {
+  try {
+    const yaml = exportToAPMN(modeler)
+    window.parent.postMessage({ type: 'yaml-updated', yaml }, '*')
+    toast('Synced to TwinTrack')
+  } catch (e) {
+    console.error(e)
+    toast('Sync failed: ' + e.message, 'error')
   }
 })
 
