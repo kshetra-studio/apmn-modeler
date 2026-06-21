@@ -65,12 +65,13 @@
     </div>
   </div>
 
-  <!-- Properties panel -->
+  <!-- Properties panel — floating, hidden until a node is selected -->
   <div id="props-panel">
-    <div id="props-header">Properties</div>
-    <div id="props-content">
-      <p class="props-empty">Select a node or connection<br>to edit its properties.</p>
+    <div id="props-header">
+      <span id="props-title">Properties</span>
+      <button id="props-close" title="Close">✕</button>
     </div>
+    <div id="props-content"></div>
   </div>
 </div>
 

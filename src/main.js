@@ -63,9 +63,20 @@ document.getElementById('btn-sync').addEventListener('click', () => {
 
 let selectedElement = null
 
+const _propsPanel = document.getElementById('props-panel')
+document.getElementById('props-close').addEventListener('click', () => {
+  _propsPanel.classList.remove('open')
+  modeler.get('selection').select([])
+})
+
 modeler.on('selection.changed', ({ newSelection }) => {
   selectedElement = newSelection[0] || null
-  renderProps(selectedElement)
+  if (selectedElement && selectedElement.type !== 'bpmn:Process') {
+    renderProps(selectedElement)
+    _propsPanel.classList.add('open')
+  } else {
+    _propsPanel.classList.remove('open')
+  }
 })
 
 modeler.on('element.changed', ({ element }) => {
@@ -76,7 +87,7 @@ function renderProps(element) {
   const content = document.getElementById('props-content')
 
   if (!element || element.type === 'bpmn:Process') {
-    content.innerHTML = `<p class="props-empty">Select a node or connection to edit its properties.</p>`
+    content.innerHTML = ''
     return
   }
 
