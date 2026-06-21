@@ -36,14 +36,23 @@ fetch('/starter.bpmn')
 const isEmbedded = new URLSearchParams(location.search).has('embedded')
 if (isEmbedded) document.body.classList.add('embedded')
 
-// Receive converted APMN from parent frame
+// Receive messages from parent frame
 window.addEventListener('message', async (event) => {
-  if (event.data?.type !== 'load-yaml') return
-  try {
-    await importFromAPMN(modeler, event.data.yaml)
-    try { modeler.get('canvas').zoom('fit-viewport', 'auto') } catch (_) {}
-  } catch (e) {
-    console.error('[APMN] postMessage import failed:', e)
+  if (event.data?.type === 'load-yaml') {
+    try {
+      await importFromAPMN(modeler, event.data.yaml)
+      try { modeler.get('canvas').zoom('fit-viewport', 'auto') } catch (_) {}
+    } catch (e) {
+      console.error('[APMN] postMessage import failed:', e)
+    }
+  } else if (event.data?.type === 'request-svg') {
+    try {
+      const { svg } = await modeler.saveSVG()
+      window.parent.postMessage({ type: 'svg-exported', svg }, '*')
+    } catch (e) {
+      console.error('[APMN] SVG export failed:', e)
+      window.parent.postMessage({ type: 'svg-exported', svg: null }, '*')
+    }
   }
 })
 
