@@ -2,6 +2,7 @@ import BaseRenderer from 'diagram-js/lib/draw/BaseRenderer'
 import { append as svgAppend, create as svgCreate, attr as svgAttr } from 'tiny-svg'
 import { getTypeInfo } from './types.js'
 import { renderIcon, iconToSvg } from './icons.js'
+import { riskRegistry } from './risk.js'
 
 const HIGH_PRIORITY = 1500
 
@@ -50,9 +51,40 @@ export default class APMNRenderer extends BaseRenderer {
     const isGate  = baseType.includes('Gateway')
     const isEvent = baseType.includes('Event')
 
-    if (isGate)  return this._drawGate(parentNode, element, info)
-    if (isEvent) return this._drawEvent(parentNode, element, info)
-    return this._drawTask(parentNode, element, info)
+    const shape = isGate ? this._drawGate(parentNode, element, info)
+      : isEvent ? this._drawEvent(parentNode, element, info)
+      : this._drawTask(parentNode, element, info)
+
+    if (riskRegistry.has(bo.id)) this._drawRiskBubble(parentNode, element)
+    return shape
+  }
+
+  // Small amber bubble at the top-right corner — flags a node that's watched
+  // by an escapeGate, or that itself escalates. Property-driven, not an arrow.
+  _drawRiskBubble(parentNode, element) {
+    const { width } = element
+    const cx = width - 2
+    const cy = 2
+    const r = 7
+
+    const circle = svgCreate('circle')
+    svgAttr(circle, {
+      cx, cy, r,
+      fill: '#D97706',
+      stroke: '#fff',
+      'stroke-width': 1.5,
+    })
+    svgAppend(parentNode, circle)
+
+    const icon = svgCreate('text')
+    svgAttr(icon, {
+      x: cx, y: cy + 1,
+      'text-anchor': 'middle', 'dominant-baseline': 'middle',
+      fill: 'white', 'font-size': 9, 'font-weight': '700',
+      'font-family': 'system-ui, sans-serif',
+    })
+    icon.textContent = '!'
+    svgAppend(parentNode, icon)
   }
 
   _drawTask(parentNode, element, info) {

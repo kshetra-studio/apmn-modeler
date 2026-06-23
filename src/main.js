@@ -11,6 +11,15 @@ import { getTypeInfo, APMN_PROPS } from './apmn-module/types.js'
 import { buildSidebar } from './sidebar.js'
 import { setupPage, fitToPage, expandPage } from './page.js'
 import apmnModdle from './apmn-module/apmn-moddle.json'
+import { recomputeRisk } from './apmn-module/risk.js'
+
+// Recompute the risk registry and force a re-render of every element so
+// risk bubbles stay in sync with `watches`/`escalate_to` after import or edits.
+function refreshRisk() {
+  const elementRegistry = modeler.get('elementRegistry')
+  recomputeRisk(elementRegistry)
+  modeler.get('eventBus').fire('elements.changed', { elements: elementRegistry.getAll() })
+}
 
 // ── Init modeler ─────────────────────────────────────────────────────────────
 
@@ -29,8 +38,12 @@ fetch('/starter.bpmn')
     setupPage(modeler)
     buildSidebar(modeler)
     try { modeler.get('canvas').zoom('fit-viewport', 'auto') } catch (_) {}
+    refreshRisk()
   })
   .catch(console.error)
+
+modeler.on('import.done', refreshRisk)
+modeler.on('commandStack.changed', refreshRisk)
 
 // ── Embedded mode ─────────────────────────────────────────────────────────────
 const isEmbedded = new URLSearchParams(location.search).has('embedded')
