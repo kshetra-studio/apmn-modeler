@@ -87,9 +87,12 @@ body {
 
 #canvas { width: 100%; height: 100%; }
 
-/* ── Hide bpmn-js native palette + bpmn.io watermark ────────────────────── */
+/* ── Hide bpmn-js native palette (replaced by our own APMN palette) ──────── */
 .djs-palette { display: none !important; }
-.bjs-powered-by { display: none !important; }
+
+/* "Powered by bpmn.io" watermark — bpmn.io License requires it stay visible
+   and unobscured (http://bpmn.io/license). Keep at its default bottom-right
+   position; do not remove or override. */
 
 /* ── Transparent bpmn-js internals so dot-grid shows through everywhere ─── */
 .djs-container { background: transparent !important; }
@@ -530,7 +533,10 @@ textarea.prop-input { resize: vertical; min-height: 64px; }
 
 #apmn-badge {
   position: absolute;
-  bottom: 12px;
+  /* Stacked above the bottom-right bpmn.io watermark (bottom:15px/right:15px,
+     ~21px tall) so the two never overlap — license requires the watermark
+     stay fully visible and unobscured. */
+  bottom: 48px;
   right: 12px;
   font-size: 11px;
   font-weight: 600;
@@ -550,7 +556,7 @@ textarea.prop-input { resize: vertical; min-height: 64px; }
 #apmn-badge-popup {
   display: none;
   position: absolute;
-  bottom: 44px;
+  bottom: 80px;
   right: 12px;
   width: 280px;
   background: #1e293b;
