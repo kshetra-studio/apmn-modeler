@@ -29,18 +29,58 @@ const modeler = new BpmnModeler({
   // moddleExtensions registered separately below after confirming legacy attrs still work
 })
 
-// Load starter diagram and build sidebar after modeler is ready
-fetch('/starter.bpmn')
-  .then(r => r.text())
-  .then(xml => layoutProcess(xml))
-  .then(laidOutXml => modeler.importXML(laidOutXml))
-  .then(() => {
-    setupPage(modeler)
-    buildSidebar(modeler)
-    try { modeler.get('canvas').zoom('fit-viewport', 'auto') } catch (_) {}
-    refreshRisk()
-  })
-  .catch(console.error)
+// ── Load from URL param, or fall back to the starter diagram ───────────────
+//
+// `?yaml=<base64url-encoded APMN YAML>` lets anything that already has YAML
+// (an MCP tool, a coding agent, a shared link) open a real, standard-notation
+// diagram with zero browser automation — no import-button clicking required.
+function decodeYamlParam(param) {
+  try {
+    const base64 = param.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4)
+    const binary = atob(padded)
+    const bytes = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+    return new TextDecoder().decode(bytes)
+  } catch (e) {
+    console.error('[APMN] failed to decode yaml URL param:', e)
+    return null
+  }
+}
+
+function finishLoad() {
+  setupPage(modeler)
+  buildSidebar(modeler)
+  try { modeler.get('canvas').zoom('fit-viewport', 'auto') } catch (_) {}
+  refreshRisk()
+}
+
+function loadStarter() {
+  return fetch('/starter.bpmn')
+    .then(r => r.text())
+    .then(xml => layoutProcess(xml))
+    .then(laidOutXml => modeler.importXML(laidOutXml))
+    .then(finishLoad)
+}
+
+async function boot() {
+  const yamlParam = new URLSearchParams(location.search).get('yaml')
+  if (yamlParam) {
+    const yaml = decodeYamlParam(yamlParam)
+    if (yaml) {
+      try {
+        await importFromAPMN(modeler, yaml)
+        finishLoad()
+        return
+      } catch (e) {
+        console.error('[APMN] failed to import yaml from URL param, falling back to starter:', e)
+      }
+    }
+  }
+  await loadStarter()
+}
+
+boot().catch(console.error)
 
 modeler.on('import.done', refreshRisk)
 modeler.on('commandStack.changed', refreshRisk)
