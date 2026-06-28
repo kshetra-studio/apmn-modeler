@@ -21,6 +21,24 @@ function refreshRisk() {
   modeler.get('eventBus').fire('elements.changed', { elements: elementRegistry.getAll() })
 }
 
+// fit-viewport can throw on certain laid-out bounding boxes (e.g. several
+// branches converging on one node with no explicit join gateway). A failed
+// fit-viewport call can leave the canvas transform corrupted (zeroed-out
+// matrix, effectively invisible) rather than just untouched, and a second
+// fit-viewport attempt afterwards re-corrupts it the same way — so on
+// failure, recover with an explicit numeric viewbox (bypasses the buggy
+// auto-fit math entirely) instead of silently swallowing the error or
+// retrying the same call.
+function safeFitViewport() {
+  const canvas = modeler.get('canvas')
+  try {
+    canvas.zoom('fit-viewport', 'auto')
+  } catch (e) {
+    console.error('[APMN] fit-viewport failed, recovering with an explicit viewbox:', e)
+    try { canvas.viewbox({ x: 0, y: 0, width: 1200, height: 800 }) } catch (_) {}
+  }
+}
+
 // ── Init modeler ─────────────────────────────────────────────────────────────
 
 const modeler = new BpmnModeler({
@@ -48,10 +66,14 @@ function decodeYamlParam(param) {
   }
 }
 
+// NOTE: does NOT zoom — importFromAPMN() already fits the viewport itself.
+// Calling fit-viewport a second time after a failed first attempt re-corrupts
+// the canvas transform the same way (confirmed: not just a no-op retry).
+// Only loadStarter() needs to zoom explicitly, since modeler.importXML()
+// doesn't fit the viewport on its own.
 function finishLoad() {
   setupPage(modeler)
   buildSidebar(modeler)
-  try { modeler.get('canvas').zoom('fit-viewport', 'auto') } catch (_) {}
   refreshRisk()
 }
 
@@ -60,7 +82,7 @@ function loadStarter() {
     .then(r => r.text())
     .then(xml => layoutProcess(xml))
     .then(laidOutXml => modeler.importXML(laidOutXml))
-    .then(finishLoad)
+    .then(() => { safeFitViewport(); finishLoad() })
 }
 
 async function boot() {
@@ -93,8 +115,7 @@ if (isEmbedded) document.body.classList.add('embedded')
 window.addEventListener('message', async (event) => {
   if (event.data?.type === 'load-yaml') {
     try {
-      await importFromAPMN(modeler, event.data.yaml)
-      try { modeler.get('canvas').zoom('fit-viewport', 'auto') } catch (_) {}
+      await importFromAPMN(modeler, event.data.yaml)  // already fits the viewport itself
     } catch (e) {
       console.error('[APMN] postMessage import failed:', e)
     }
@@ -311,7 +332,7 @@ document.getElementById('btn-import-bpmn').addEventListener('click', () => {
       const xml = await file.text()
       await modeler.importXML(xml)
       setupPage(modeler)
-      modeler.get('canvas').zoom('fit-viewport', 'auto')
+      safeFitViewport()
       toast('Imported ' + file.name)
     } catch (err) {
       console.error(err)

@@ -76,7 +76,22 @@ export async function importFromAPMN(modeler, yamlText) {
   // Let bpmn-auto-layout place all shapes and route all connections
   const laidOutXml = await layoutProcess(rawXml)
   await modeler.importXML(laidOutXml)
-  modeler.get('canvas').zoom('fit-viewport', 'auto')
+  // fit-viewport can throw on certain laid-out bounding boxes (e.g. several
+  // branches converging on one node with no explicit join gateway can yield
+  // a degenerate bounding box) — that's a cosmetic auto-fit failure, not a
+  // reason to treat the whole import as failed and silently show the wrong
+  // diagram. zoom(1) is NOT a safe fallback here: on a fresh import with no
+  // viewbox ever established, it still routes through the same buggy
+  // fit-viewport computation internally and throws identically. Set an
+  // explicit numeric viewbox instead — that bypasses fit-viewport math
+  // entirely. The user can still scroll/zoom manually afterwards.
+  const canvas = modeler.get('canvas')
+  try {
+    canvas.zoom('fit-viewport', 'auto')
+  } catch (e) {
+    console.error('[APMN] fit-viewport failed after import, recovering with an explicit viewbox:', e)
+    try { canvas.viewbox({ x: 0, y: 0, width: 1200, height: 800 }) } catch (_) {}
+  }
 }
 
 function apmnToBpmn(doc) {
