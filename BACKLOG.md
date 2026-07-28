@@ -1,5 +1,41 @@
 # APMN Modeler — Backlog
 
+## 🔴 Urgent
+
+### Swimlanes — execution boundary visualisation
+Add BPMN Lane/Pool support so diagrams can visually separate tasks by execution context (e.g. Orchestrator, External MCP, Human, Observability).
+
+**Approach options (decide before building):**
+- **Auto-inferred** — lanes derived from node type with no YAML change (Orchestrator lane = agentTask/ragTask, External lane = mcpToolTask, Human lane = humanInLoopTask, Observe lane = observeEvent). Zero schema change.
+- **Explicit in YAML** — author declares `lanes:` block assigning nodes to named lanes. More flexible, requires schema + emitter + export roundtrip work.
+- **Hybrid** — auto-infer as default, allow `lane:` override per node.
+
+**Work required:**
+1. YAML schema: optional `lanes:` block (if explicit approach)
+2. `yaml.js` BPMN emitter: emit `<bpmn:LaneSet>` / `<bpmn:Lane>` / `<flowNodeRef>` — ~60–80 lines
+3. Verify `bpmn-auto-layout` handles lane-aware layout (biggest unknown)
+4. YAML export roundtrip: write `lanes:` back out on Export YAML
+5. **Needs staging environment before any work starts** — prod is live and referenced
+
+**Estimated effort:** 1–2 days for basic rendering; +1 day for drag-to-reassign-lane interactivity.
+
+### BPMN standard nodes missing from palette
+The sidebar only shows AI Task nodes. Standard BPMN nodes (Task, User Task, Service Task, Script Task, Call Activity, Sub-Process, Intermediate Events, Timer, Error boundary events) are not available to drag onto the canvas.
+
+This is a significant gap — authors modelling hybrid human/AI processes need BPMN primitives alongside APMN nodes without switching tools.
+
+**Work required:**
+1. Add a "BPMN Standard" section to `APMNPalette.js` below the AI Tasks section
+2. Include at minimum: Task, UserTask, ServiceTask, SubProcess, IntermediateCatchEvent (timer, message), BoundaryEvent
+3. These are native `bpmn-js` elements — no new renderer work needed, just palette entries
+4. Group visually: "AI Tasks" (existing) / "BPMN Standard" / "Observability" (per existing backlog item)
+
+**Estimated effort:** half a day.
+
+**Needs staging before building** — same constraint as swimlanes.
+
+---
+
 ## Design
 
 ### Observability nodes as tier-2
