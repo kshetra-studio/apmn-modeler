@@ -11,16 +11,5 @@
   },
   "compatibility_flags": [
     "nodejs_compat"
-  ],
-  "env": {
-    "staging": {
-      "name": "apmn-modeler-staging",
-      "routes": [
-        {
-          "pattern": "staging.apmn-modeler.kshetra.studio/*",
-          "zone_name": "kshetra.studio"
-        }
-      ]
-    }
-  }
+  ]
 }

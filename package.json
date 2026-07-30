@@ -8,8 +8,6 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "npm run build && wrangler deploy",
-    "deploy:staging": "npm run build && wrangler deploy --env staging"
   },
   "dependencies": {
     "bpmn-auto-layout": "^1.3.0",
