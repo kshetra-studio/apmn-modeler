@@ -25,6 +25,15 @@ export function buildSidebar(modeler) {
     }
   }
 
+  // Scroll-to-bottom fade indicator
+  const hint = document.getElementById('sidebar-scroll-hint')
+  function updateScrollFade() {
+    const atBottom = sidebar.scrollTop + sidebar.clientHeight >= sidebar.scrollHeight - 4
+    hint.classList.toggle('hidden', atBottom)
+  }
+  sidebar.addEventListener('scroll', updateScrollFade)
+  setTimeout(updateScrollFade, 100)
+
   // Close popover on outside click
   document.addEventListener('click', () => closePopover())
 }
