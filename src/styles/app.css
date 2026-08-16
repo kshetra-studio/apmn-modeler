@@ -101,56 +101,56 @@ body {
 .apmn-page-bg rect { fill: transparent !important; stroke: none !important; }
 
 /* ── APMN Sidebar ────────────────────────────────────────────────────────── */
-/* Sidebar scroll-fade wrapper */
 #sidebar-wrap {
   position: relative;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;      /* two side-by-side columns */
   flex-shrink: 0;
-  width: 80px;
-  /* Must match the app flex height so sidebar is constrained and scrolls */
+  width: 160px;             /* 80px per column */
   height: 100%;
   overflow: hidden;
+  border-right: 1px solid #334155;
 }
 
-#sidebar-scroll-hint {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 40px;
-  background: linear-gradient(to bottom, transparent, #1e293b 80%);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 5px;
-  font-size: 13px;
-  color: #64748b;
-  pointer-events: none;
-  transition: opacity 0.2s;
-  z-index: 10;
-}
-
-#sidebar-scroll-hint.hidden {
-  opacity: 0;
-}
+/* The old single-scroll hint is hidden by JS; keep rule harmless */
+#sidebar-scroll-hint { display: none; }
 
 #apmn-sidebar {
+  display: contents;        /* let .sidebar-col children size themselves */
+}
+
+/* ── Two-column structure inside the sidebar ─────────────────────────────── */
+.sidebar-col {
   width: 80px;
-  flex: 1;
+  flex-shrink: 0;
   background: #1e293b;
-  border-right: 1px solid #334155;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 8px 4px;
+  padding: 4px 4px 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
 }
 
-#apmn-sidebar::-webkit-scrollbar { width: 3px; }
-#apmn-sidebar::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+/* Divider between the two columns */
+#sidebar-col-bpmn {
+  border-left: 1px solid #334155;
+}
+
+.sidebar-col::-webkit-scrollbar { width: 3px; }
+.sidebar-col::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+
+/* Column label at the very top */
+.sidebar-col-header {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 6px 0 2px;
+  width: 100%;
+  text-align: center;
+}
 
 .sidebar-section-title {
   font-size: 8px;
@@ -160,15 +160,15 @@ body {
   color: #475569;
   width: 100%;
   text-align: center;
-  padding: 8px 0 4px;
+  padding: 6px 0 3px;
   border-top: 1px solid #334155;
   margin-top: 4px;
 }
 
-.sidebar-section-title:first-child {
+/* First section title in each column follows the col-header, no double border */
+.sidebar-col-header + .sidebar-section-title {
   border-top: none;
   margin-top: 0;
-  padding-top: 2px;
 }
 
 .sidebar-entry {

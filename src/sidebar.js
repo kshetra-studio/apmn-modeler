@@ -9,30 +9,52 @@ export function buildSidebar(modeler) {
   const sidebar = document.getElementById('apmn-sidebar')
   if (!sidebar) return
 
-  const sections = [
-    { title: 'AI Tasks',      items: APMN_TASKS },
-    { title: 'AI Gates',      items: APMN_GATES },
-    { title: 'BPMN Standard', items: BPMN_STANDARD },
-  ]
+  // ── Two-column layout ──────────────────────────────────────────────────────
+  // Left: AI & Automation nodes  |  Right: Traditional BPMN nodes
+  const colAi   = document.createElement('div')
+  const colBpmn = document.createElement('div')
+  colAi.className   = 'sidebar-col'
+  colBpmn.className = 'sidebar-col'
+  colAi.id   = 'sidebar-col-ai'
+  colBpmn.id = 'sidebar-col-bpmn'
 
-  for (const section of sections) {
+  // Column headers
+  const mkHeader = (label, color) => {
+    const h = document.createElement('div')
+    h.className = 'sidebar-col-header'
+    h.textContent = label
+    if (color) h.style.color = color
+    return h
+  }
+  colAi.appendChild(mkHeader('AI', '#60a5fa'))
+  colBpmn.appendChild(mkHeader('BPMN', '#94a3b8'))
+
+  // AI column: Tasks then Gates
+  const aiSections = [
+    { title: 'Tasks', items: APMN_TASKS },
+    { title: 'Gates', items: APMN_GATES },
+  ]
+  for (const section of aiSections) {
     const heading = document.createElement('div')
     heading.className = 'sidebar-section-title'
     heading.textContent = section.title
-    sidebar.appendChild(heading)
-    for (const item of section.items) {
-      sidebar.appendChild(makeEntry(item))
-    }
+    colAi.appendChild(heading)
+    for (const item of section.items) colAi.appendChild(makeEntry(item))
   }
 
-  // Scroll-to-bottom fade indicator
+  // BPMN column: Standard nodes
+  const bpmnHeading = document.createElement('div')
+  bpmnHeading.className = 'sidebar-section-title'
+  bpmnHeading.textContent = 'Standard'
+  colBpmn.appendChild(bpmnHeading)
+  for (const item of BPMN_STANDARD) colBpmn.appendChild(makeEntry(item))
+
+  sidebar.appendChild(colAi)
+  sidebar.appendChild(colBpmn)
+
+  // Remove now-unneeded single-scroll hint (each column scrolls independently)
   const hint = document.getElementById('sidebar-scroll-hint')
-  function updateScrollFade() {
-    const atBottom = sidebar.scrollTop + sidebar.clientHeight >= sidebar.scrollHeight - 4
-    hint.classList.toggle('hidden', atBottom)
-  }
-  sidebar.addEventListener('scroll', updateScrollFade)
-  setTimeout(updateScrollFade, 100)
+  if (hint) hint.style.display = 'none'
 
   // Close popover on outside click
   document.addEventListener('click', () => closePopover())
