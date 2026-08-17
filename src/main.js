@@ -9,6 +9,7 @@ import { exportToAPMN, importFromAPMN } from './io/yaml.js'
 import { layoutProcess } from 'bpmn-auto-layout'
 import { getTypeInfo, APMN_PROPS } from './apmn-module/types.js'
 import { buildSidebar } from './sidebar.js'
+import { addLaneToModeler } from './lanes.js'
 import { setupPage, fitToPage, expandPage } from './page.js'
 import apmnModdle from './apmn-module/apmn-moddle.json'
 import { recomputeRisk } from './apmn-module/risk.js'
@@ -376,6 +377,74 @@ function toast(msg, type = 'success') {
   el.style.background = type === 'error' ? '#dc2626' : '#22c55e'
   el.classList.add('show')
   setTimeout(() => el.classList.remove('show'), 2500)
+}
+
+// ── Add Lane ─────────────────────────────────────────────────────────────────
+
+document.getElementById('btn-add-lane').addEventListener('click', () => {
+  showLaneDialog()
+})
+
+function showLaneDialog() {
+  // Reuse import-modal pattern: small floating prompt
+  const overlay = document.createElement('div')
+  overlay.id = 'lane-dialog-overlay'
+  overlay.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;
+    display:flex;align-items:center;justify-content:center;
+  `
+  overlay.innerHTML = `
+    <div style="
+      background:#1e293b;border:1px solid #334155;border-radius:12px;
+      padding:20px 24px;width:320px;box-shadow:0 8px 32px rgba(0,0,0,.5)
+    ">
+      <div style="font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:12px">Add Swimlane</div>
+      <input id="lane-name-input" type="text" placeholder="Lane name (e.g. Risk Team)"
+        style="
+          width:100%;padding:8px 10px;background:#0f172a;border:1px solid #475569;
+          border-radius:6px;color:#f1f5f9;font-size:13px;outline:none;
+          box-sizing:border-box;margin-bottom:14px;
+        " autofocus/>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button id="lane-cancel" style="
+          padding:6px 14px;border-radius:6px;border:1px solid #475569;
+          background:#1e293b;color:#94a3b8;font-size:12px;cursor:pointer;
+        ">Cancel</button>
+        <button id="lane-confirm" style="
+          padding:6px 14px;border-radius:6px;border:1px solid #3b82f6;
+          background:#2563eb;color:white;font-size:12px;cursor:pointer;font-weight:600;
+        ">Add Lane →</button>
+      </div>
+    </div>
+  `
+  document.body.appendChild(overlay)
+
+  const input = overlay.querySelector('#lane-name-input')
+  input.focus()
+
+  const close = () => overlay.remove()
+
+  overlay.querySelector('#lane-cancel').addEventListener('click', close)
+  overlay.addEventListener('click', e => { if (e.target === overlay) close() })
+
+  const confirm = async () => {
+    const name = input.value.trim()
+    if (!name) { input.style.borderColor = '#ef4444'; return }
+    close()
+    try {
+      await addLaneToModeler(modeler, name)
+      toast(`Lane "${name}" added — drag nodes into it`)
+    } catch (e) {
+      console.error('[APMN] addLane failed:', e)
+      toast('Add lane failed: ' + e.message, 'error')
+    }
+  }
+
+  overlay.querySelector('#lane-confirm').addEventListener('click', confirm)
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') confirm()
+    if (e.key === 'Escape') close()
+  })
 }
 
 // Close modals on backdrop click
